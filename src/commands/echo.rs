@@ -23,13 +23,13 @@ impl Command for Echo {
         let mut first = true;
         for string in args.strings {
             if !first {
-                stdout.write(b" ")?;
+                stdout.write_all(b" ")?;
             } else {
                 first = false;
             }
-            stdout.write(&string.into_encoded_bytes())?;
+            stdout.write_all(&string.into_encoded_bytes())?;
         }
-        stdout.write(b"\n")?;
+        stdout.write_all(b"\n")?;
         Ok(ExitCode::from(0))
     }
 }

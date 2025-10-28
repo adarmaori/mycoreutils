@@ -16,13 +16,13 @@ impl Command for Seq {
     type Args = SeqArgs;
 
     fn run<R: std::io::Read, W: std::io::Write, E: std::io::Write>(
-        stdin: &mut R,
+        _stdin: &mut R,
         stdout: &mut W,
-        stderr: &mut E,
+        _stderr: &mut E,
         args: Self::Args,
     ) -> std::io::Result<std::process::ExitCode> {
         for i in args.start..=args.end {
-            stdout.write(&format!("{i}\n").into_bytes())?;
+            stdout.write_all(&format!("{i}\n").into_bytes())?;
         }
         Ok(ExitCode::from(0))
     }

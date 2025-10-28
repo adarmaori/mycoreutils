@@ -1,5 +1,5 @@
 use crate::commands::{Command, NoArgs};
-use std::{process::ExitCode, write};
+use std::{process::ExitCode, writeln};
 
 pub struct Yes;
 impl Command for Yes {
@@ -10,12 +10,7 @@ impl Command for Yes {
         _stderr: &mut E,
         _args: Self::Args,
     ) -> std::io::Result<std::process::ExitCode> {
-        loop {
-            match write!(stdout, "y\n") {
-                Ok(_) => {}
-                Err(_) => break,
-            }
-        }
+        while writeln!(stdout, "y").is_ok() {}
         Ok(ExitCode::from(1))
     }
 }

@@ -30,7 +30,7 @@ impl Command for Head {
         loop {
             line_buf.clear();
             buf_reader.read_until(b'\n', &mut line_buf)?;
-            stdout.write(&line_buf)?;
+            stdout.write_all(&line_buf)?;
             counter += 1;
             if counter == args.n {
                 break;

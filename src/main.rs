@@ -46,7 +46,7 @@ fn main() {
             Commands::Cat(args) => Cat::run(&mut reader, &mut writer, &mut serr, args),
             Commands::Seq(args) => Seq::run(&mut reader, &mut writer, &mut serr, args),
             Commands::Head(args) => Head::run(&mut reader, &mut writer, &mut serr, args),
-            Commands::Yes => Yes::run(&mut reader, &mut writer, &mut serr, NoArgs::default()),
+            Commands::Yes => Yes::run(&mut reader, &mut writer, &mut serr, NoArgs),
         }
     } else {
         Ok(ExitCode::from(0))
