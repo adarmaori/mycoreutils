@@ -24,9 +24,3 @@ impl Command for Cat {
         Ok(ExitCode::from(0))
     }
 }
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn normal() {}
-}
