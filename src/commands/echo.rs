@@ -9,6 +9,8 @@ pub struct Echo;
 #[derive(Parser)]
 pub struct EchoArgs {
     strings: Vec<OsString>,
+    #[arg(short = 'n')]
+    new_line: bool,
 }
 
 impl Command for Echo {
@@ -29,7 +31,9 @@ impl Command for Echo {
             }
             stdout.write_all(&string.into_encoded_bytes())?;
         }
-        stdout.write_all(b"\n")?;
+        if !args.new_line {
+            stdout.write_all(b"\n")?;
+        }
         Ok(ExitCode::from(0))
     }
 }
@@ -43,8 +47,9 @@ mod tests {
     use rand::Rng;
     use std::{
         ffi::{OsStr, OsString},
-        io::{BufReader, BufWriter, Write},
+        io::{self, BufReader, BufWriter, Write},
         os::unix::ffi::OsStrExt,
+        process::ExitCode,
     };
 
     fn random_echo_args(count: usize, max_len: usize) -> Vec<OsString> {
@@ -72,22 +77,50 @@ mod tests {
         joined.push(newline);
         joined
     }
-    #[test]
-    fn normal() {
+
+    fn run_with_args(args: EchoArgs) -> io::Result<(ExitCode, Vec<u8>)> {
         let stdout: Vec<u8> = Vec::new();
         let mut stdout_buf = BufWriter::new(stdout);
         let stdin: &[u8] = b""; // Not reading from stdin
         let mut stdin = BufReader::new(stdin);
         let mut stderr: Vec<u8> = Vec::new();
+        let res: ExitCode = Echo::run(&mut stdin, &mut stdout_buf, &mut stderr, args)?;
+        stdout_buf.flush()?;
+        Ok((res, Vec::from_iter(stdout_buf.into_inner()?)))
+    }
+
+    #[test]
+    fn normal() {
         let strings = random_echo_args(10, 10);
         let args = EchoArgs {
             strings: strings.clone(),
+            new_line: false,
         };
-        assert!(Echo::run(&mut stdin, &mut stdout_buf, &mut stderr, args).is_ok());
-        assert!(stdout_buf.flush().is_ok());
-        assert_eq!(
-            stdout_buf.into_inner().unwrap(),
-            chain_args(strings).into_encoded_bytes()
-        );
+        let result = run_with_args(args);
+        assert!(result.is_ok());
+
+        // NOTE: This should always happen thanks to the previous assertion
+        if let Ok((code, printout)) = result {
+            assert_eq!(code, ExitCode::from(0));
+            assert_eq!(printout, chain_args(strings).as_bytes())
+        }
+    }
+    #[test]
+    fn with_n_flag() {
+        let strings = random_echo_args(10, 10);
+        let args = EchoArgs {
+            strings: strings.clone(),
+            new_line: true,
+        };
+        let result = run_with_args(args);
+        assert!(result.is_ok());
+
+        // NOTE: This should always happen thanks to the previous assertion
+        if let Ok((code, printout)) = result {
+            let chained = chain_args(strings);
+            let chained = chained.as_encoded_bytes();
+            assert_eq!(code, ExitCode::from(0));
+            assert_eq!(printout, chained[..chained.len() - 1]);
+        }
     }
 }
