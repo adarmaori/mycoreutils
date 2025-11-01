@@ -1,8 +1,7 @@
 use clap::Parser;
 use std::{
-    ffi::OsString,
     fs::File,
-    io::{self, BufRead, BufReader, Read},
+    io::{self, BufRead, BufReader, Write},
     path::PathBuf,
     process::ExitCode,
 };
@@ -30,20 +29,30 @@ impl Command for Cat {
             let mut file = File::open(source)?;
             if args.number_nonblank {
                 let mut buf_reader = BufReader::new(file);
-                let mut line = String::new();
-                let mut counter = 1;
-                while let Ok(len) = buf_reader.read_line(&mut line) {
-                    dbg!(len);
-                    if len > 1 {
-                        stdout.write(&format!("   {}  ", counter).as_bytes())?;
-                        stdout.write(&line.as_bytes())?;
-                        counter += 1;
-                    } else if len == 1 {
-                        writeln!(stdout, "")?;
-                    } else {
+                let mut buf: Vec<u8> = Vec::new();
+                let mut counter: usize = 1;
+                loop {
+                    buf.clear();
+                    let n = buf_reader.read_until(b'\n', &mut buf)?;
+                    if n == 0 {
                         break;
                     }
-                    line.clear();
+
+                    // Determine if the line (excluding trailing newlines) is blank
+                    let is_blank = {
+                        let mut end = buf.len();
+                        while end > 0 && (buf[end - 1] == b'\n' || buf[end - 1] == b'\r') {
+                            end -= 1;
+                        }
+                        end == 0
+                    };
+
+                    if !is_blank {
+                        // Match `cat -b` style: right-align to width 6, then a tab
+                        write!(stdout, "{:>6}\t", counter)?;
+                        counter += 1;
+                    }
+                    stdout.write_all(&buf)?;
                 }
             } else {
                 io::copy(&mut file, stdout)?;
