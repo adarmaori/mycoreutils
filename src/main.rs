@@ -1,5 +1,5 @@
 use std::{
-    io::{self, BufReader, BufWriter},
+    io::{self, BufReader},
     process::ExitCode,
 };
 
@@ -39,7 +39,8 @@ fn main() {
         let mut serr = io::stderr().lock();
 
         let mut reader = BufReader::new(sid);
-        let mut writer = BufWriter::new(sout);
+        // Do not wrap stdout in BufWriter to avoid buffering interactive output
+        let mut writer = sout;
 
         match command {
             Commands::Echo(args) => Echo::run(&mut reader, &mut writer, &mut serr, args),
